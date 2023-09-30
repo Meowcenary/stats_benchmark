@@ -8,6 +8,22 @@ import (
     "github.com/montanaflynn/stats"
 )
 
+func anscombe1() []stats.Coordinate {
+    return []stats.Coordinate{
+        {10, 8.04},
+        {8, 6.95},
+        {13, 7.58},
+        {9, 8.81},
+        {11, 8.33},
+        {14, 9.96},
+        {6, 7.24},
+        {4, 4.26},
+        {12, 10.84},
+        {7, 4.82},
+        {5, 5.68},
+    }
+}
+
 func TestAnscombe1LinearRegression(t *testing.T) {
     anscombe_1 := []stats.Coordinate{
         {10, 8.04},
@@ -158,4 +174,11 @@ func TestAnscombe4LinearRegression(t *testing.T) {
                  fmt.Sprint(calculated_coefficients),
                  fmt.Sprint(expected_coefficients))
     }
+}
+
+// This variable is used to ensure the compiler does not optimize away teh call to stats.LinearRegression
+var blackhole []stats.Coordinate
+func BenchmarkAnscombeLinearRegression(b *testing.B) {
+    result, _ := stats.LinearRegression(anscombe1())
+    blackhole = result
 }
