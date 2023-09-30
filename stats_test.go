@@ -2,13 +2,14 @@ package stats_test
 
 import (
     "fmt"
-    "testing"
     "slices"
+    "testing"
 
     "github.com/montanaflynn/stats"
 )
 
-func anscombe1() []stats.Coordinate {
+// Test fixtures TODO: ideally these would be read from a file
+func Anscombe1() []stats.Coordinate {
     return []stats.Coordinate{
         {10, 8.04},
         {8, 6.95},
@@ -24,22 +25,8 @@ func anscombe1() []stats.Coordinate {
     }
 }
 
-func TestAnscombe1LinearRegression(t *testing.T) {
-    anscombe_1 := []stats.Coordinate{
-        {10, 8.04},
-        {8, 6.95},
-        {13, 7.58},
-        {9, 8.81},
-        {11, 8.33},
-        {14, 9.96},
-        {6, 7.24},
-        {4, 4.26},
-        {12, 10.84},
-        {7, 4.82},
-        {5, 5.68},
-    }
-
-    expected_coefficients :=stats.Series{
+func Anscombe1Coefficents() stats.Series {
+    return stats.Series{
         {10, 8.001000000000001},
         {8, 7.000818181818185},
         {13, 9.501272727272724},
@@ -52,18 +39,10 @@ func TestAnscombe1LinearRegression(t *testing.T) {
         {7, 6.500727272727277},
         {5, 5.5005454545454615},
     }
-
-    calculated_coefficients, _ := stats.LinearRegression(anscombe_1)
-
-    if !slices.Equal(calculated_coefficients, expected_coefficients) {
-        t.Errorf("Linear regression coefficients for Anscombe 2 do not match expectations\n%s\n%s",
-                 fmt.Sprint(calculated_coefficients),
-                 fmt.Sprint(expected_coefficients))
-    }
 }
 
-func TestAnscombe2LinearRegression(t *testing.T) {
-    anscombe_2 := []stats.Coordinate{
+func Anscombe2() []stats.Coordinate {
+    return []stats.Coordinate{
         {10, 9.14},
         {8, 8.14},
         {13, 8.74},
@@ -76,8 +55,10 @@ func TestAnscombe2LinearRegression(t *testing.T) {
         {7, 7.26},
         {5, 4.74},
     }
+}
 
-    expected_coefficients := stats.Series{
+func Anscombe2Coefficients() []stats.Coordinate {
+    return stats.Series{
         {10, 8.00090909090909},
         {8, 7.000909090909092},
         {13, 9.500909090909088},
@@ -90,18 +71,11 @@ func TestAnscombe2LinearRegression(t *testing.T) {
         {7, 6.500909090909093},
         {5, 5.500909090909094},
     }
-
-    calculated_coefficients, _ := stats.LinearRegression(anscombe_2)
-
-    if !slices.Equal(calculated_coefficients, expected_coefficients) {
-        t.Errorf("Linear regression coefficients for Anscombe 2 do not match expectations\n%s\n%s",
-                 fmt.Sprint(calculated_coefficients),
-                 fmt.Sprint(expected_coefficients))
-    }
 }
 
-func TestAnscombe3LinearRegression(t *testing.T) {
-    anscombe_3 := []stats.Coordinate{
+
+func Anscombe3() []stats.Coordinate {
+    return []stats.Coordinate {
         {10, 7.46},
         {8, 6.77},
         {13, 12.74},
@@ -114,8 +88,10 @@ func TestAnscombe3LinearRegression(t *testing.T) {
         {7, 6.42},
         {5, 5.73},
     }
+}
 
-    expected_coefficients :=stats.Series{
+func Anscombe3Coefficients() []stats.Coordinate {
+    return stats.Series{
         {10, 7.999727272727271},
         {8, 7.000272727272732},
         {13, 9.498909090909081},
@@ -128,18 +104,10 @@ func TestAnscombe3LinearRegression(t *testing.T) {
         {7, 6.5005454545454615},
         {5, 5.501090909090922},
     }
-
-    calculated_coefficients, _ := stats.LinearRegression(anscombe_3)
-
-    if !slices.Equal(calculated_coefficients, expected_coefficients) {
-        t.Errorf("Linear regression coefficients for Anscombe 3 do not match expectations\n%s\n%s",
-                 fmt.Sprint(calculated_coefficients),
-                 fmt.Sprint(expected_coefficients))
-    }
 }
 
-func TestAnscombe4LinearRegression(t *testing.T) {
-    anscombe_4 := []stats.Coordinate{
+func Anscombe4() []stats.Coordinate {
+    return []stats.Coordinate {
         {8, 6.58},
         {8, 5.76},
         {8, 7.71},
@@ -152,8 +120,10 @@ func TestAnscombe4LinearRegression(t *testing.T) {
         {8, 7.91},
         {8, 6.89},
     }
+}
 
-    expected_coefficients :=stats.Series{
+func Anscombe4Coefficients() []stats.Coordinate {
+    return stats.Series{
         {8, 7.000999999999998},
         {8, 7.000999999999998},
         {8, 7.000999999999998},
@@ -166,19 +136,38 @@ func TestAnscombe4LinearRegression(t *testing.T) {
         {8, 7.000999999999998},
         {8, 7.000999999999998},
     }
+}
+// End of fixtures
 
-    calculated_coefficients, _ := stats.LinearRegression(anscombe_4)
+func TestAnscombeLinearRegression(t *testing.T) {
+    type test struct {
+        input []stats.Coordinate
+        want  []stats.Coordinate
+    }
 
-    if !slices.Equal(calculated_coefficients, expected_coefficients) {
-        t.Errorf("Linear regression coefficients for Anscombe 4 do not match expectations\n%s\n%s",
-                 fmt.Sprint(calculated_coefficients),
-                 fmt.Sprint(expected_coefficients))
+    tests := []test{
+        {input: Anscombe1(), want: Anscombe1Coefficents()},
+        {input: Anscombe2(), want: Anscombe2Coefficients()},
+        {input: Anscombe3(), want: Anscombe3Coefficients()},
+        {input: Anscombe4(), want: Anscombe4Coefficients()},
+    }
+
+    for i, test := range tests {
+        got, _ := stats.LinearRegression(test.input)
+
+        if !slices.Equal(got, test.want) {
+            t.Errorf("Linear regression coefficients for Anscombe %d do not match expectations\n%s\n%s",
+                     i+1,
+                     fmt.Sprint(got),
+                     fmt.Sprint(test.want))
+        }
     }
 }
 
-// This variable is used to ensure the compiler does not optimize away teh call to stats.LinearRegression
+// This variable is used to ensure the compiler does not optimize away the call to stats.LinearRegression
+// See the Benchmarks section in Jon Bodner's Learning Go: An Idiomatic Approach, Chapter 13
 var blackhole []stats.Coordinate
 func BenchmarkAnscombeLinearRegression(b *testing.B) {
-    result, _ := stats.LinearRegression(anscombe1())
+    result, _ := stats.LinearRegression(Anscombe1())
     blackhole = result
 }
