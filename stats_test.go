@@ -2,13 +2,18 @@ package stats_test
 
 import (
     "fmt"
+    "math"
     "slices"
     "testing"
 
     "github.com/montanaflynn/stats"
 )
 
-// Test fixtures TODO: ideally these would be read from a file
+/*
+TODO: ideally these would be read from a file
+Test fixtures
+AnscombeN (e.g Anscombe1) returns an Anscombe's Quartet datas set
+*/
 func Anscombe1() []stats.Coordinate {
     return []stats.Coordinate{
         {10, 8.04},
@@ -25,6 +30,12 @@ func Anscombe1() []stats.Coordinate {
     }
 }
 
+/*
+AnscombeNCoefficents (e.g Anscombe1Coefficents()) returns the linear regression coefficients found by the stats
+library as a series of coordinates. The x value of the coordinates returnd maps to the x values of the coordinates
+passed in E.g in this fixture the first coordinate's x value of 10 maps to the fixture Anscombe1's first coordinate x
+value of 10
+*/
 func Anscombe1Coefficents() stats.Series {
     return stats.Series{
         {10, 8.001000000000001},
@@ -139,7 +150,83 @@ func Anscombe4Coefficients() []stats.Coordinate {
 }
 // End of fixtures
 
-func TestAnscombeLinearRegression(t *testing.T) {
+/*
+The stats library calculates the intercept and gradient as part of the LinearRegression function provided, however it
+does not return these values or store them into a publicly available variable. To examine these results for
+comparison to the Python and R scripts this code has been extracted from the function LinearRegression found here:
+https://github.com/montanaflynn/stats/blob/master/regression.go#L14
+*/
+func FindGradientAndIntercept(s []stats.Coordinate) (gradientIntercept []float64, err error) {
+    if len(s) == 0 {
+        // Cannot return nil for type float64
+        return []float64{0.0, 0.0}, stats.EmptyInputErr
+    }
+
+    // Placeholder for the math to be done
+    var sum [5]float64
+
+    // Loop over data keeping index in place
+    i := 0
+    for ; i < len(s); i++ {
+    sum[0] += s[i].X
+    sum[1] += s[i].Y
+    sum[2] += s[i].X * s[i].X
+    sum[3] += s[i].X * s[i].Y
+    sum[4] += s[i].Y * s[i].Y
+    }
+
+    // Find gradient and intercept
+    f := float64(i)
+    gradient := (f*sum[3] - sum[0]*sum[1]) / (f*sum[2] - sum[0]*sum[0])
+    intercept := (sum[1] / f) - (gradient * sum[0] / f)
+
+    return []float64{gradient, intercept}, nil
+}
+
+// TODO This isn't being used just yet. If you run out of time to improve this further just remove
+// Helper function to round float values for testing
+func roundFloat(val float64, precision uint) float64 {
+    ratio := math.Pow(10, float64(precision))
+    return math.Round(val*ratio) / ratio
+}
+
+// This is a "table driven" test as described here: https://dave.cheney.net/2019/05/07/prefer-table-driven-tests
+func TestAnscombeLinearRegressionGradientsAndIntercepts(t *testing.T) {
+    type test struct {
+        input []stats.Coordinate
+        want  []float64
+    }
+
+    /*
+    input is one of the Anscombe data fixtures, want is a slice of floats where the first value is the gradient and the
+    second value is the intercept
+    */
+    tests := []test{
+        {input: Anscombe1(), want: []float64{0.5001, 3.0001}},
+        {input: Anscombe1(), want: []float64{0.500, 3.001}},
+        {input: Anscombe1(), want: []float64{0.4997, 3.0025}},
+        {input: Anscombe1(), want: []float64{0.4999, 3.0017}},
+    }
+
+    for i, test := range tests {
+        got, _ := FindGradientAndIntercept(test.input)
+
+        if (got[0] == test.want[0]) && (got[1] == test.want[1]) {
+            t.Errorf("Linear regression gradient and intercept for Anscombe %d do not match expectations\nWant:\nGradient: %f\nIntercept: %f\nGot:\nGradient: %f\nIntercept: %f",
+                     i+1,
+                     test.want[0],
+                     test.want[1],
+                     got[0],
+                     got[1])
+        }
+    }
+}
+
+/*
+As with the gradient and intercept test, this is a "table driven" test as described here:
+https://dave.cheney.net/2019/05/07/prefer-table-driven-tests
+*/
+func TestAnscombeLinearRegressionCoefficients(t *testing.T) {
     type test struct {
         input []stats.Coordinate
         want  []stats.Coordinate
@@ -164,8 +251,10 @@ func TestAnscombeLinearRegression(t *testing.T) {
     }
 }
 
-// This variable is used to ensure the compiler does not optimize away the call to stats.LinearRegression
-// See the Benchmarks section in Jon Bodner's Learning Go: An Idiomatic Approach, Chapter 13
+/*
+This variable is used to ensure the compiler does not optimize away the call to stats.LinearRegression
+See the Benchmarks section in Jon Bodner's Learning Go: An Idiomatic Approach, Chapter 13
+*/
 var blackhole []stats.Coordinate
 func BenchmarkAnscombeLinearRegression(b *testing.B) {
     result, _ := stats.LinearRegression(Anscombe1())
