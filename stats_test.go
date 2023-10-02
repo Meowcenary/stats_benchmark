@@ -258,5 +258,8 @@ See the Benchmarks section in Jon Bodner's Learning Go: An Idiomatic Approach, C
 var blackhole []stats.Coordinate
 func BenchmarkAnscombeLinearRegression(b *testing.B) {
     result, _ := stats.LinearRegression(Anscombe1())
+    result, _ = stats.LinearRegression(Anscombe2())
+    result, _ = stats.LinearRegression(Anscombe3())
+    result, _ = stats.LinearRegression(Anscombe4())
     blackhole = result
 }
